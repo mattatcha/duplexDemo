@@ -30,6 +30,7 @@ func matchResource(part string, resources []types.Resource) types.Resource {
 }
 
 func main() {
+	// ADDRESS:PORT the server should listen on.
 	listen := getopt("listen", ":3000")
 
 	// Manually registering resources for now.
@@ -37,22 +38,27 @@ func main() {
 		images.ImagePlugin{},
 	}
 
+	// Register a default handler which calls plugin functions.
 	http.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
 		parts := strings.Split(path, "/")
 		resource := matchResource(parts[1], resources)
 
+		// We didn't match a resource so let's 404!
 		if resource == nil {
 			rw.WriteHeader(404)
 			json.NewEncoder(rw).Encode("Not found")
 			return
 		}
 
+		// Call handler for resource.
 		code, res := resource.Handle(*req)
 
+		// Write status code and then write response out as JSON.
 		rw.WriteHeader(code)
 		json.NewEncoder(rw).Encode(res)
 	})
 
+	// Startup HTTP server with a listening address.
 	http.ListenAndServe(listen, nil)
 }

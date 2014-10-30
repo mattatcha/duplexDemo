@@ -12,14 +12,3 @@ func GetImages(r *http.Request) (int, interface{}) {
 	}
 	return 200, images
 }
-
-func DeleteImage(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func PutImage(w http.ResponseWriter, r *http.Request) {
-
-}
-func PostImage(w http.ResponseWriter, r *http.Request) {
-
-}
