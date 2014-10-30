@@ -20,13 +20,3 @@ func (p ImagePlugin) Handle(r http.Request) (int, interface{}) {
 	}
 
 }
-
-// func (p ImagePlugin) Endpoints() []types.Endpoint {
-// 	return []types.Endpoint{
-// 		types.Endpoint{
-// 			Method:  "GET",
-// 			Match:   "/",
-// 			Handler: GetImages,
-// 		},
-// 	}
-// }

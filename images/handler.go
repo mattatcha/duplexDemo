@@ -11,7 +11,6 @@ func GetImages(r *http.Request) (int, interface{}) {
 		},
 	}
 	return 200, images
-	// json.NewEncoder(w).Encode(images)
 }
 
 func DeleteImage(w http.ResponseWriter, r *http.Request) {
