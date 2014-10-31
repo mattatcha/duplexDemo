@@ -3,14 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 
-	"github.com/MattAitchison/duplexDemo/bitTorrent"
-	"github.com/MattAitchison/duplexDemo/discovery"
-	"github.com/MattAitchison/duplexDemo/images"
+	"github.com/MattAitchison/duplexDemo/plugins/bitTorrent"
+	"github.com/MattAitchison/duplexDemo/plugins/discovery"
 	"github.com/MattAitchison/duplexDemo/types"
+
+	dplx "github.com/progrium/duplex/prototype"
 )
 
 func getopt(name, dfault string) string {
@@ -23,11 +25,12 @@ func getopt(name, dfault string) string {
 func main() {
 	// ADDRESS:PORT the server should listen on.
 	listen := getopt("listen", ":3000")
+	rpcListen := getopt("rpc_listen", "127.0.0.1:9877")
 
 	// Manually registering resources for now.
 	resources := []types.Resource{
 		bitTorrent.BitTorrentPlugin{},
-		images.ImagePlugin{},
+		// images.ImagePlugin{},
 		discovery.DiscoveryPlugin{},
 	}
 
@@ -56,7 +59,24 @@ func main() {
 		return
 
 	})
+	go http.ListenAndServe(listen, nil)
+
+	client := dplx.NewPeer()
+
+	if err := client.Bind(rpcListen); err != nil {
+		log.Fatal(err)
+	}
+
+	// defer client.Close()
+	reply := new(string)
+	err := client.Call("ImagePlugin.Namespace", map[string]interface{}{"f": "a"}, reply)
+	if err != nil {
+		log.Fatal(err)
+
+	}
+
+	log.Println(*reply)
 
 	// Startup HTTP server with a listening address.
-	http.ListenAndServe(listen, nil)
+
 }
