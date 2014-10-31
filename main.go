@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
-	"strings"
+	"regexp"
 
+	"github.com/MattAitchison/duplexDemo/bitTorrent"
+	"github.com/MattAitchison/duplexDemo/discovery"
 	"github.com/MattAitchison/duplexDemo/images"
 	"github.com/MattAitchison/duplexDemo/types"
 )
@@ -17,46 +20,41 @@ func getopt(name, dfault string) string {
 	}
 	return value
 }
-
-// Call namespace on each resource until we match the path.
-// If we can't find anything then return nil.
-func matchResource(part string, resources []types.Resource) types.Resource {
-	for _, resource := range resources {
-		if resource.Namespace() == part {
-			return resource
-		}
-	}
-	return nil
-}
-
 func main() {
 	// ADDRESS:PORT the server should listen on.
 	listen := getopt("listen", ":3000")
 
 	// Manually registering resources for now.
 	resources := []types.Resource{
+		bitTorrent.BitTorrentPlugin{},
 		images.ImagePlugin{},
+		discovery.DiscoveryPlugin{},
 	}
 
 	// Register a default handler which calls plugin functions.
 	http.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path
-		parts := strings.Split(path, "/")
-		resource := matchResource(parts[1], resources)
 
-		// We didn't match a resource so let's 404!
-		if resource == nil {
-			rw.WriteHeader(404)
-			json.NewEncoder(rw).Encode("Not found")
-			return
+		for _, resource := range resources {
+			pattern := resource.Namespace()
+			matched, err := regexp.MatchString(pattern, path)
+			if err != nil {
+				fmt.Println(err)
+			}
+			if matched {
+				code, res := resource.Handle(*req)
+				rw.WriteHeader(code)
+				json.NewEncoder(rw).Encode(res)
+
+				return
+			}
 		}
+		// We didn't match a resource so let's 404!
 
-		// Call handler for resource.
-		code, res := resource.Handle(*req)
+		rw.WriteHeader(404)
+		json.NewEncoder(rw).Encode("Not found")
+		return
 
-		// Write status code and then write response out as JSON.
-		rw.WriteHeader(code)
-		json.NewEncoder(rw).Encode(res)
 	})
 
 	// Startup HTTP server with a listening address.
